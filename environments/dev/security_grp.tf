@@ -2,6 +2,10 @@ resource "aws_security_group" "frontend_sec_grp" {
   vpc_id      = aws_vpc.dev_vpc.id
   description = "frontend_sec_grp"
 
+  tags = {
+    Name = "frontend_sec_grp"
+  }
+
   ingress {
     cidr_blocks = ["0.0.0.0/0"]
     from_port   = 80
@@ -29,6 +33,10 @@ resource "aws_security_group" "frontend_sec_grp" {
 resource "aws_security_group" "backend_sec_grp" {
   vpc_id      = aws_vpc.dev_vpc.id
   description = "backend_sec_grp"
+  
+  tags = {
+    Name = "backend_sec_grp"
+  }
 
   ingress {
     cidr_blocks = ["10.0.0.0/16"]
