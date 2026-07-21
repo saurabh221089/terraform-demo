@@ -3,14 +3,18 @@
 ## Workspaces
 
 terraform workspace new dev
+
 terraform workspace list
+
 terraform workspace select dev
 
+```
 resource "aws_s3_bucket" "example" {
   bucket = "my-app-${terraform.workspace}"
   acl    = "private"
 }
--------------------------------------------------
+```
+
 ## Types of Provisioners
 
 Local-exec: Executes a command on the machine running Terraform.
@@ -44,7 +48,8 @@ resource "aws_instance" "example" {
   }
 }
 ```
--------------------------------------------------
+## Data block import
+```
 data "aws_ami" "latest_amazon_linux" {
   owners      = ["amazon"]
   most_recent = true
@@ -58,7 +63,7 @@ resource "aws_instance" "example" {
   ami           = data.aws_ami.latest_amazon_linux.id
   instance_type = "t2.micro"
 }
--------------------------------------------------
+
 data "aws_instance" "nontf_instance" {
     instance_id = "i-044b2af955b1ae4e1"
 }
@@ -66,7 +71,9 @@ data "aws_instance" "nontf_instance" {
 output "nontf_instance_ip" {
     value = data.aws_instance.nontf_instance.public_ip
 }
----------------------------------------------------
+```
+## VPC
+```
 resource "aws_vpc" "app_vpc" {
   cidr_block = "10.0.0.0/16"
   enable_dns_support = true
@@ -93,7 +100,10 @@ resource "aws_subnet" "app_subnet_2" {
     Name = "AppSubnet2"
   }
 }
+```
 
+## Security group and EC2 Instances
+```
 resource "aws_security_group" "WebTrafficSG" {
   name        = "WebTrafficSG"
   description = "Allow web traffic"
@@ -172,11 +182,9 @@ resource "aws_db_instance" "app_db" {
 variable "instance_type" {
   value = var.env == "prod" ? "t3.large" : "t3.micro"
 }
-
----------------------------------------------------
-
-$ terraform workspace list
-
+```
+## Lookup and variables
+```
 lookup(var.ami, terraform.workspace)
 
 variable "ami" {
@@ -193,3 +201,4 @@ module "payroll_app" {
     app_region = lookup(var.region, terraform.workspace)
     ami = lookup(var.ami, terraform.workspace)
 }
+```
