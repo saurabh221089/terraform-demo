@@ -1,0 +1,32 @@
+stages:
+  - scan
+  - cost-estimation
+
+terrascan:
+  image: tenable/terrascan:latest
+  stage: scan
+  script:
+    - terrascan init
+    - /go/bin/terrascan scan -i terraform -d .
+
+infracost-diff:
+  image: infracost/infracost:ci-latest
+  stage: cost-estimation
+  variables:
+    INFRACOST_API_KEY: $INFRACOST_API_KEY
+  script:
+    - cd terraform
+    - echo "Running Infracost diff..."
+    - infracost breakdown --path=. --format=json --out-file=infracost-base.json --terraform-var-file=terraform.tfvars --show-skipped
+    - git fetch origin $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+    - git checkout origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+    - infracost breakdown --path=. --format=json --out-file=infracost-compare.json --terraform-var-file=terraform.tfvars --show-skipped
+    - infracost diff --path infracost-base.json --compare-to infracost-compare.json --format=table
+  only:
+    - merge_requests
+  artifacts:
+    when: always
+    expire_in: 1 day
+    paths:
+      - infracost-base.json
+      - infracost-compare.json

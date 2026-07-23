@@ -1,5 +1,73 @@
 # terraform-demo
 
+## Implementation of Terrascan
+```
+docker pull tenable/terrascan:latest
+
+  curl -L "$(curl -s https://api.github.com/repos/tenable/terrascan/releases/latest | grep -o -E "https://.+?_Linux_x86_64.tar.gz")" > terrascan.tar.gz
+  tar -xf terrascan.tar.gz terrascan && rm terrascan.tar.gz
+  sudo install terrascan /usr/local/bin && rm terrascan
+  terrascan version
+
+$ terrascan scan -t aws
+$ terrascan scan -i terraform
+$ terrascan scan -i k8s
+$ terrascan scan -i helm
+$ terrascan scan -i kustomize
+$ terrascan scan -i docker (For scanning dockerfile in current dir)
+
+$ terrascan scan -t aws -d ./terraform --severity high
+```
+
+## Working with ECR
+#### DOCKER PUSH
+```
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 112233445566.dkr.ecr.us-east-1.amazonaws.com
+docker build -t helm-elasticedge-release/ee-v1-firewall .
+docker tag helm-elasticedge-release/ee-v1-firewall:latest 112233445566.dkr.ecr.us-east-1.amazonaws.com/helm-elasticedge-release/ee-v1-firewall:latest
+docker push 112233445566.dkr.ecr.us-east-1.amazonaws.com/helm-elasticedge-release/ee-v1-firewall:latest
+```
+#### HELM PUSH
+```
+aws ecr get-login-password --region us-east-1 | helm registry login --username AWS \
+	     --password-stdin 112233445566.dkr.ecr.us-east-1.amazonaws.com
+helm push ee-v1-firewall-1.2.0.tgz oci://112233445566.dkr.ecr.us-east-1.amazonaws.com/helm-dataplatform-release/
+```
+
+## Mount S3 bucket locally
+```
+apt update && apt install -y s3fs
+mkdir -p /mnt/s3_volume
+s3fs my-test-bucket /mnt/s3_volume/ -o iam_role=auto -o allow_other
+
+root@ip-10-192-10-191:~# df -hT
+Filesystem      Type       Size  Used Avail Use% Mounted on
+/dev/root       ext4        49G   36G   13G  75% /
+tmpfs           tmpfs      1.9G     0  1.9G   0% /dev/shm
+tmpfs           tmpfs      772M  984K  771M   1% /run
+tmpfs           tmpfs      5.0M     0  5.0M   0% /run/lock
+/dev/nvme0n1p15 vfat       105M  6.1M   99M   6% /boot/efi
+tmpfs           tmpfs      386M  4.0K  386M   1% /run/user/0
+s3fs            fuse.s3fs   16E     0   16E   0% /mnt/s3_volume   <----- S3 bucket mounted on this location
+
+aws s3 ls s3://my-test-bucket --recursive --human-readable --summarize
+Total Objects: 833
+   Total Size: 36.6 GiB
+```
+
+## Enable native S3 state locking
+```
+terraform {
+  backend "s3" {
+    bucket         = "tf-state-bucket"
+    key            = "terraform/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    use_lockfile   = true
+  }
+}
+```
+
 ## Workspaces
 
 terraform workspace new dev
